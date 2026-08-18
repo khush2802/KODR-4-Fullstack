@@ -1,0 +1,360 @@
+﻿# HTML, DOM, and JavaScript: How querySelector / querySelectorAll / HTMLCollection work
+
+This note explains the browser pipeline from HTML text to the DOM, and why `HTMLCollection` and `NodeList` behave differently.
+
+> Important: This file is plain text. For better visual styling, open it as Markdown (`.md`) or use an editor with markdown support.
+
+---
+
+## 1. HTML is just text first
+
+Example HTML:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOM</title>
+</head>
+<body>
+    <h1>Hello</h1>
+    <p>First</p>
+    <p>Second</p>
+    <div class="box">One</div>
+    <div class="box">Two</div>
+</body>
+</html>
+```
+
+At this stage, the browser only has text. There is no DOM yet, so JavaScript cannot run queries like `document.querySelector("p")`.
+
+---
+
+## 2. The HTML parser reads the page
+
+The browser uses an **HTML parser** that reads the file from top to bottom.
+
+The parser processes tags sequentially:
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>
+<body>
+<h1>
+<p>
+<p>
+<div>
+<div>
+```
+
+This means the parser does not jump around; it builds the DOM while reading.
+
+---
+
+## 3. Each tag becomes a DOM object
+
+Every HTML element is converted into a JavaScript object.
+
+Example:
+```html
+<h1>Hello</h1>
+```
+becomes:
+```
+Object:
+ tagName = "H1"
+ textContent = "Hello"
+ children = []
+ parent = body
+```
+
+Another example:
+```html
+<p>First</p>
+```
+becomes:
+```
+Object:
+ tagName = "P"
+ textContent = "First"
+ parent = body
+```
+
+---
+
+## 4. Parent-child connections build the tree
+
+The parser links objects as parents and children.
+
+Example structure:
+```
+<body>
+  <h1>Hello</h1>
+  <p>First</p>
+  <div>One</div>
+</body>
+```
+
+Internally:
+```
+Body Object
+├── H1 Object
+├── P Object
+└── DIV Object
+```
+
+Each element stores:
+- `children` array of child objects
+- `parent` reference to the parent object
+
+This two-way link makes navigation possible in both directions.
+
+---
+
+## 5. The DOM tree is created
+
+After parsing, the browser has a tree called the **Document Object Model (DOM)**.
+
+Example:
+```
+Document
+└── html
+    ├── head
+    │   └── title
+    └── body
+        ├── h1
+        ├── p
+        ├── p
+        ├── div
+        └── div
+```
+
+Each box in the tree is a live object, not HTML text.
+
+---
+
+## 6. JavaScript now has access
+
+Once the DOM exists, JavaScript can use `document`.
+
+Example:
+```javascript
+document.body
+```
+returns the body object.
+
+Example:
+```javascript
+document.body.children
+```
+returns an `HTMLCollection`:
+```
+0 → h1
+1 → p
+2 → p
+3 → div
+4 → div
+```
+
+> Note: These are references to DOM objects, not copies.
+
+---
+
+## 7. querySelector()
+
+When you run:
+```javascript
+document.querySelector(".box")
+```
+The browser traverses the DOM until it finds the first matching element.
+
+Search path:
+```
+Document → html → body → h1 → p → p → div.box
+```
+
+It stops when the first match is found and returns that element.
+
+---
+
+## 8. querySelectorAll()
+
+When you run:
+```javascript
+document.querySelectorAll(".box")
+```
+The browser continues searching the entire DOM.
+
+It finds both matching elements and returns a `NodeList`:
+```
+0 → div.box (One)
+1 → div.box (Two)
+```
+
+Important:
+- `querySelectorAll()` returns a **static NodeList**.
+- It is a snapshot of matches at the time the function runs.
+
+---
+
+## 9. getElementsByClassName() and getElementsByTagName()
+
+Example:
+```javascript
+const collection = document.getElementsByClassName("box");
+```
+or
+```javascript
+const collection = document.getElementsByTagName("p");
+```
+
+These methods return an `HTMLCollection`.
+
+Important:
+- `HTMLCollection` is a **live collection**.
+- It reflects changes to the DOM automatically.
+
+Example:
+```javascript
+const collection = document.getElementsByTagName("p");
+console.log(collection.length); // 2
+
+const newP = document.createElement("p");
+newP.textContent = "Third";
+document.body.appendChild(newP);
+console.log(collection.length); // 3
+```
+
+This happens because the collection points directly to the DOM tree.
+
+---
+
+## 10. Why `HTMLCollection` is live
+
+`HTMLCollection` does not copy elements.
+It keeps a reference to DOM nodes.
+
+So when the DOM changes, the collection updates automatically.
+
+Example:
+```
+collection → document.body.children
+```
+When `body` changes, `collection` changes too.
+
+---
+
+## 11. Why `NodeList` is static
+
+`querySelectorAll()` searches once and creates a snapshot.
+
+Example:
+```javascript
+const list = document.querySelectorAll(".box");
+```
+If you later append another matching element, `list` still contains only the original matches.
+
+To update it, call `querySelectorAll()` again.
+
+---
+
+## 12. Browser flow summary
+
+```
+HTML file
+↓
+Browser downloads HTML
+↓
+HTML parser starts
+↓
+Reads tags sequentially
+↓
+Creates DOM objects
+↓
+Links parent & child
+↓
+Builds DOM tree
+↓
+Creates document object
+↓
+JavaScript executes
+↓
+document.querySelector() / querySelectorAll()
+↓
+Browser traverses DOM
+↓
+Returns element(s)
+```
+
+---
+
+## 13. Memory representation
+
+Example HTML:
+```html
+<p>Hello</p>
+```
+After parsing:
+```
+P Object
+ tagName = "P"
+ text = "Hello"
+ parent = body
+ children = []
+```
+
+DOM:
+```
+Document → HTML → BODY → P Object
+```
+
+`querySelectorAll("p")` returns:
+```
+NodeList → P Object
+```
+
+`getElementsByTagName("p")` returns:
+```
+HTMLCollection → P Object (live reference)
+```
+
+---
+
+## 14. Key mental model
+
+- **HTML** = source text.
+- **DOM parser** = converts text into a tree of objects.
+- **document** = entry point to the DOM tree.
+- `querySelector()` = first match.
+- `querySelectorAll()` = static `NodeList` snapshot.
+- `getElementsByClassName()` / `getElementsByTagName()` = live `HTMLCollection`.
+
+> Once you understand the DOM as a live object tree, DOM API behavior becomes easier to predict.
+
+---
+
+## 15. Quick difference summary
+
+- `HTMLCollection`
+  - returns HTML elements only
+  - live collection
+  - no `forEach()` directly
+  - returned by `getElementsByClassName()`, `getElementsByTagName()`, `document.forms`, `document.images`, `document.links`
+
+- `NodeList`
+  - returns nodes (elements, text, comments depending on source)
+  - usually static when from `querySelectorAll()`
+  - supports `forEach()`
+  - returned by `querySelectorAll()`, `childNodes`
+
+---
+
+## 16. Styling note
+
+If you want actual color and font differences:
+- rename this file to `htmlTODOM.md`
+- open it in VS Code Markdown preview
+- important headings and bold text will display clearly
+
+> Tip: In plain text, use `#`, `**bold**`, and `> NOTE` blocks to make key ideas stand out.

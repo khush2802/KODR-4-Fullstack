@@ -1,0 +1,39 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #222;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.bulb {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #555;
+    border: 3px solid #b3b0b0;
+    transition: 0.3s ease;
+}
+
+.btn {
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: 0.3s;
+}
+
+.bg{
+     background-color: yellow;
+}

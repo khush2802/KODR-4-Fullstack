@@ -1,0 +1,225 @@
+Fair enough — here's the full test. Answer everything (order doesn't matter within a section), then send it all back and I'll evaluate strictly.
+
+---
+
+## Section A — Conceptual / Output Prediction
+
+**A1.** Predict the exact output of each line, in order:
+```js
+console.log(1 + "1");
+console.log(1 + true);
+console.log("5" - 2);
+console.log("5" + 2);
+console.log(null == undefined);
+console.log(null === undefined);
+console.log(typeof null);
+```
+
+**A2.** What gets logged (or what error occurs) for each line?
+```js
+console.log(a);
+var a = 5;
+
+console.log(b);
+let b = 10;
+```
+
+**A3.** Predict the output:
+```js
+console.log(0 || "hello" && "" || "world");
+console.log([] == false);
+console.log([] == "");
+console.log("" == false);
+```
+
+**A4.** Predict the output/errors, line by line:
+```js
+console.log(foo());
+console.log(bar());
+
+function foo() {
+  return "foo declared";
+}
+
+var bar = function() {
+  return "bar expression";
+};
+```
+
+**A5.** What gets printed, and what is the value of `result`?
+```js
+function add(a, b) {
+  console.log(a + b);
+}
+
+let result = add(2, 3);
+console.log(result);
+```
+
+**A6.** Predict the output:
+```js
+let x = 5;
+let y = "5";
+console.log(x == y ? "loose equal" : "not equal");
+console.log(x === y ? "strict equal" : "not equal");
+console.log(typeof x === typeof y);
+```
+
+**A7.** What is logged, or is there an error? Why?
+```js
+const makeObj = (name) => { name: name };
+console.log(makeObj("Alex"));
+```
+
+**A8.** Predict the full output:
+```js
+for (let i = 1; i <= 3; i++) {
+  for (let j = 1; j <= 3; j++) {
+    if (j === 2) continue;
+    if (i === 3) break;
+    console.log(i, j);
+  }
+}
+```
+
+---
+
+## Section B — Debugging (find the bug(s) and fix the code)
+
+**B1.**
+```js
+function printNumbers(n) {
+  for (let i = 0; i <= n; i++) {
+    if (i = n) {
+      console.log("Reached the end");
+    }
+    console.log(i);
+  }
+}
+printNumbers(5);
+```
+
+**B2.** Expected: `sumAll(1, 2, 3)` should return `6`. It doesn't. Fix it.
+```js
+function sumAll(...nums) {
+  let total = 0;
+  for (let i = 0; i <= nums.length; i++) {
+    total += nums[i];
+  }
+  return total;
+}
+console.log(sumAll(1, 2, 3));
+```
+
+**B3.** Expected: `filterEvens([1,2,3,4,5,6])` should return `[2,4,6]`. It doesn't. Fix it.
+```js
+function isEven(num) {
+  return num % 2 === 0;
+}
+
+function filterEvens(arr) {
+  let result = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (isEven) {
+      result.push(arr[i]);
+    }
+  }
+  return result;
+}
+
+console.log(filterEvens([1, 2, 3, 4, 5, 6]));
+```
+
+**B4.** This function is supposed to classify age input safely. Identify the issues and fix it so invalid/missing input is handled properly.
+```js
+function isAdult(age) {
+  if (age >= 18) {
+    return "Adult";
+  } else {
+    return "Minor";
+  }
+}
+
+console.log(isAdult("20"));
+console.log(isAdult("5"));
+console.log(isAdult(undefined));
+```
+
+**B5.** Multiple bugs here. Find and fix all of them.
+```js
+function getDayType(day = "Monday") {
+  switch (day) {
+    case "Saturday":
+    case "Sunday":
+      result = "Weekend";
+    default:
+      result = "Weekday";
+  }
+  return result;
+}
+
+console.log(getDayType("Sunday"));
+console.log(getDayType("Tuesday"));
+console.log(getDayType());
+```
+
+---
+
+## Section C — Coding / Problem-Solving
+
+**C1.** Write `isPrime(n)` that returns `true`/`false`.
+
+**C2.** Write `reverseString(str)` without using `.reverse()`.
+
+**C3.** Write `sumOfDigits(n)` that returns the sum of digits of a positive integer (e.g. `1234 → 10`), without converting to a string.
+
+**C4.** Write `findMax(arr)` that returns the largest number in an array, without using `Math.max`.
+
+**C5.** Write `countVowels(str)` that returns the number of vowels in a string.
+
+**C6.** Write `factorial(n = 1)` using a loop (not recursion). If `n` is negative, return `null`.
+
+**C7.** Write `compose(f, g)` that returns a new function taking `x` and returning `f(g(x))`. Given `double(x) = x * 2` and `square(x) = x * x`, use `compose` to build a function that squares a number then doubles the result. Test it with `3`.
+
+**C8.** Write `makeMultiplier(factor)` that returns a new function which multiplies its input by `factor`. Create `triple = makeMultiplier(3)` and call `triple(7)`.
+
+**C9.** Write `applyOperation(arr, operation)` — takes an array of numbers and a function, returns a new array with `operation` applied to each element, **without using `.map()`**. Test it with a function that squares each number.
+
+**C10.** Write `calculateTotal(taxRate = 0.1, ...prices)` that returns the total cost of all prices including tax.
+
+**C11.** Write `removeDuplicates(arr)` that returns a new array with duplicates removed, **without using `Set`**.
+
+**C12.** Write `isPalindrome(str)` that checks if a string is a palindrome, ignoring case and spaces (e.g. `"Race car"` → `true`). Do not use `.reverse()`.
+
+---
+
+## Section D — Interview-Level Mixed
+
+**D1.** Write `chunkArray(arr, size)` that splits an array into subarrays of length `size`. E.g. `chunkArray([1,2,3,4,5], 2) → [[1,2],[3,4],[5]]`. If `size <= 0`, return an empty array.
+
+**D2.** Predict the output of all four `console.log` calls, then say whether the code behaves as you'd expect for a "default to Guest" pattern:
+```js
+function greet(name) {
+  if (name === undefined) {
+    name = "Guest";
+  }
+  return `Hello, ${name}!`;
+}
+
+const greetArrowFn = (name = "Guest") => `Hello, ${name}!`;
+
+console.log(greet());
+console.log(greetArrowFn());
+console.log(greet(null));
+console.log(greetArrowFn(null));
+```
+
+**D3.** Write `groupByParity(arr)` that returns an object `{ even: [...], odd: [...] }` grouping numbers from the input array. **No `.filter()`** — use a loop.
+
+**D4.** Write `retryOperation(fn, times)` that calls `fn` (which takes no arguments) up to `times` times, returning the first result that is not `null`/`undefined`. If all calls return `null`/`undefined`, return `null`. Then write a test `fn` that returns `null` on its first two calls and `"success"` on the third, to prove your `retryOperation` works.
+
+**D5.** Write `analyzeNumbers(...nums)` (rest parameters) returning an object with `sum`, `average`, `max`, `min`, and `evenCount`. If called with zero arguments, return `null`. **Do not use** `reduce`, `map`, `filter`, `Math.max`, or `Math.min` — use loops only.
+
+---
+
+Send your answers whenever ready — full code, not pseudocode, for the coding/debugging sections.

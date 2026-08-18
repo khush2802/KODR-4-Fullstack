@@ -1,0 +1,143 @@
+NodeList vs HTMLCollection
+
+Both are array-like collections of DOM objects, but they are not true arrays. The main difference is how they are created and whether they update automatically when the DOM changes.
+
+HTML Boilerplate Example
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOM</title>
+</head>
+<body>
+    <h1>Heading</h1>
+    <p>First</p>
+    <p>Second</p>
+    <div class="box">Box 1</div>
+    <div class="box">Box 2</div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+1. HTMLCollection
+
+Example:
+const collection = document.getElementsByTagName("p");
+
+This behaves like:
+collection = {
+    0: <p>First</p>,
+    1: <p>Second</p>,
+    length: 2
+}
+
+It looks array-like, but:
+Array.isArray(collection) // false
+
+HTMLCollection is live.
+When the DOM changes, the collection updates automatically:
+const collection = document.getElementsByTagName("p");
+console.log(collection.length); // 2
+
+const newP = document.createElement("p");
+newP.textContent = "Third";
+document.body.appendChild(newP);
+console.log(collection.length); // 3
+
+This automatic update is called a live collection.
+
+2. NodeList
+
+Example:
+const list = document.querySelectorAll("p");
+
+This behaves like:
+list = {
+    0: <p>First</p>,
+    1: <p>Second</p>,
+    length: 2
+}
+
+It also looks array-like, but querySelectorAll returns a static NodeList.
+If the DOM changes after the list is created, it does not update automatically:
+const list = document.querySelectorAll("p");
+const newP = document.createElement("p");
+newP.textContent = "Third";
+document.body.appendChild(newP);
+console.log(list.length); // 2
+
+To get the updated set, call querySelectorAll again:
+const updated = document.querySelectorAll("p");
+console.log(updated.length); // 3
+
+Note: Some NodeLists can be live, for example document.childNodes.
+
+Methods
+
+HTMLCollection:
+- Does not support forEach directly.
+- To iterate, use a standard for loop:
+for (let i = 0; i < collection.length; i++) {
+    console.log(collection[i]);
+}
+- Or convert it to an array:
+const arr = [...collection];
+// or
+Array.from(collection);
+
+NodeList:
+- Supports forEach directly:
+list.forEach(item => {
+    console.log(item);
+});
+
+Where they come from
+HTMLCollection sources:
+- document.getElementsByTagName()
+- document.getElementsByClassName()
+- document.forms
+- document.images
+- document.links
+
+NodeList sources:
+- document.querySelectorAll()
+- document.childNodes
+
+Note: childNodes includes text nodes (such as whitespace) and comment nodes, not just element nodes.
+
+Quick comparison
+Feature: HTMLCollection | NodeList
+Stores: HTML elements only | Nodes (elements, text, comments depending on source)
+Live?: Yes | Usually static (querySelectorAll), though some NodeLists like childNodes can be live
+Supports forEach(): No | Yes
+Returned by: getElementsByClassName, getElementsByTagName, document.forms, document.images, document.links | querySelectorAll, childNodes
+Array?: No | No
+Can use index?: Yes | Yes
+Has length?: Yes | Yes
+
+Key rules
+- Use querySelectorAll() when you want a stable snapshot of matching elements that will not change automatically.
+- Use getElementsByClassName() or getElementsByTagName() when you want a live collection that reflects DOM updates automatically.
+
+Memory view
+
+Array example:
+let arr = ["A", "B", "C"];
+arr
+0 -> "A"
+1 -> "B"
+2 -> "C"
+length = 3
+
+HTMLCollection:
+collection
+0 -> <p>
+1 -> <p>
+length = 2
+(Live DOM reference)
+
+NodeList:
+list
+0 -> <p>
+1 -> <p>
+length = 2
+(Static snapshot from querySelectorAll())
