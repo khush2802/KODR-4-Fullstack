@@ -7,6 +7,8 @@ import MainLayout from '../layouts/MainLayout';
 import Home from '../pages/Home';
 import About from '../pages/About';
 import Shop from '../pages/Shop';
+import { getData } from '../api/productApi';
+import Product from '../pages/Product';
 
 
 const AppRouter = () => {
@@ -24,7 +26,9 @@ const AppRouter = () => {
                     element:<About/>
                },{
                     path:"shop",
-                    element:<Shop/>
+                    loader:getData,
+                    hydrateFallbackElement:<h1>Loading...</h1>,
+                    element:<Product/>
                }]
           }
      ])

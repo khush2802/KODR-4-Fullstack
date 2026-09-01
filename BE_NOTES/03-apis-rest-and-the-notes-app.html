@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Note 03 — APIs, REST &amp; the Notes App · Sheryians Coding School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+}
+
+/* ── Typography & Resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Keyframe Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes dataFlow {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-fade-up     { animation: fadeUp 0.4s ease both; }
+.animate-slide-left  { animation: slideInLeft 0.5s ease both; }
+.animate-slide-right { animation: slideInRight 0.5s ease both; }
+.animate-float-pulse { animation: floatPulse 2.5s ease-in-out infinite; }
+.animate-data-flow   { animation: dataFlow 1.5s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background-color: var(--ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 32px 0 40px;
+}
+
+.main-content {
+  flex: 1;
+  max-width: calc(100% - 260px);
+  padding: 56px 56px 80px;
+}
+
+@media (max-width: 768px) {
+  .layout-container { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: relative; padding: 20px 0 24px; }
+  .main-content { max-width: 100%; padding: 32px 24px 64px; }
+}
+
+/* ── Sidebar / Navigation ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+
+.nav-brand .logo {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.nav-brand .logo .accent-dot { color: var(--accent); }
+
+.nav-brand .sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.nav-group-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 24px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color: #FFFFFF; background-color: rgba(255, 255, 255, 0.04); }
+.nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nav-link.active {
+  color: #FFFFFF;
+  border-left-color: var(--accent);
+  background-color: rgba(200, 75, 31, 0.08);
+}
+
+.nav-num {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  border-radius: 4px;
+  color: inherit;
+}
+.nav-link:hover .nav-num,
+.nav-link.active .nav-num { background-color: var(--accent); color: #FFFFFF; }
+
+/* ── Hero ── */
+.hero {
+  margin-bottom: 64px;
+  padding-bottom: 40px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+
+.hero-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.65;
+  margin: 0 0 24px;
+}
+
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.hero-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 9999px;
+  padding: 2px 12px;
+}
+
+/* ── Sections ── */
+.section-block { margin-bottom: 72px; scroll-margin-top: 24px; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.section-header-text { padding-top: 4px; }
+
+.section-num-big {
+  font-family: 'Fraunces', serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--rule);
+  user-select: none;
+  line-height: 1;
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.section-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+h4 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  color: #2A2720;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+ul, ol { font-size: 14.5px; color: #2A2720; line-height: 1.7; padding-left: 20px; }
+li { margin-bottom: 6px; }
+
+code, .inline-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background-color: var(--paper3);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.code-pre code, .code-pre .inline-code {
+  background: none; border: none; padding: 0; color: inherit; font-size: inherit;
+}
+
+/* ── Concept Box ── */
+.concept-box {
+  background-color: var(--paper2);
+  border-left: 3px solid var(--accent3);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.concept-box-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--accent3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.concept-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Note Box ── */
+.note-box {
+  background-color: #FEF9EC;
+  border: 1px solid #EDD97A;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.note-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #5C4A00;
+  margin: 0;
+}
+.note-box-text strong { color: #3D3000; }
+
+/* ── Warning Box ── */
+.warning-box {
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.warning-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #7F1D1D;
+  margin: 0;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+
+/* ── Code Block ── */
+.code-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: #13141A;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.code-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.code-copy-btn {
+  background: none;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.code-copy-btn:hover { color: rgba(255, 255, 255, 0.7); }
+.code-copy-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.code-pre {
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255, 255, 255, 0.3); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Flag Table ── */
+.flag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.flag-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--paper3);
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--rule);
+}
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); }
+.flag-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--flag-c);
+}
+.flag-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--val-c);
+}
+
+/* ── Compare Table ── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.compare-table th {
+  background-color: var(--ink);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  border: 1px solid var(--ink);
+}
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); }
+.compare-table tbody tr { transition: background-color 100ms ease; }
+.compare-table tbody tr:hover { background-color: var(--paper2); }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow Diagram ── */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; }
+.flow-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.flow-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Scale Diagram ── */
+.scale-diagram {
+  background-color: var(--paper2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--muted);
+  overflow-x: auto;
+}
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green     { color: var(--accent2); }
+.scale-diagram .red       { color: var(--accent); }
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ── Quiz ── */
+.quiz-box {
+  background-color: var(--ink);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 32px 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.quiz-question {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option {
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: #FFFFFF;
+  background-color: rgba(200, 75, 31, 0.08);
+}
+.quiz-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.quiz-option.correct {
+  border-color: var(--accent2) !important;
+  background-color: rgba(26, 107, 74, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-option.incorrect {
+  border-color: var(--accent) !important;
+  background-color: rgba(200, 75, 31, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-feedback {
+  margin-top: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.quiz-feedback.correct   { color: var(--accent2); }
+.quiz-feedback.incorrect { color: var(--accent); }
+.quiz-feedback.hidden    { display: none; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+/* ── Footer ── */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 2px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 64px;
+}
+
+  </style>
+</head>
+<body>
+<div class="layout-container">
+  <nav class="sidebar">
+    <div class="nav-brand">
+      <div class="logo">REST<span class="accent-dot">.</span>Notes</div>
+      <div class="sub">Sheryians Coding School</div>
+    </div>
+
+    <div class="nav-group-label">Concepts</div>
+    <a href="#what-is-api" class="nav-link active"><span class="nav-num">1</span>What Is an API</a>
+    <a href="#before-rest" class="nav-link"><span class="nav-num">2</span>The World Before REST</a>
+    <a href="#rest-idea" class="nav-link"><span class="nav-num">3</span>The REST Idea</a>
+    <a href="#constraints" class="nav-link"><span class="nav-num">4</span>The Rules That Matter</a>
+
+    <div class="nav-group-label">The Vocabulary</div>
+    <a href="#methods" class="nav-link"><span class="nav-num">5</span>Methods &amp; Idempotency</a>
+    <a href="#status" class="nav-link"><span class="nav-num">6</span>Status Codes</a>
+
+    <div class="nav-group-label">Build</div>
+    <a href="#notes-app" class="nav-link"><span class="nav-num">7</span>The Notes API</a>
+    <a href="#testing" class="nav-link"><span class="nav-num">8</span>Testing It</a>
+
+    <div class="nav-group-label">Assignment</div>
+    <a href="#assignment" class="nav-link"><span class="nav-num">9</span>Rebuild It in Hono</a>
+  </nav>
+
+  <main class="main-content">
+
+    <header class="hero animate-fade-up">
+      <div class="hero-eyebrow">Backend · Note 03</div>
+      <h1>APIs, REST<br>and the <em>Notes App</em></h1>
+      <p class="hero-desc">
+        Most courses teach REST as four HTTP methods. That is the syntax, not the idea. This note starts with
+        the mess that existed before REST, so the rules land as obvious rather than arbitrary.
+      </p>
+      <div class="hero-tags">
+        <span class="hero-tag">REST</span>
+        <span class="hero-tag">Resources</span>
+        <span class="hero-tag">Idempotency</span>
+        <span class="hero-tag">Status codes</span>
+      </div>
+    </header>
+
+    <!-- ══════════════ 01 ══════════════ -->
+    <section class="section-block animate-fade-up" id="what-is-api">
+      <div class="section-header">
+        <div class="section-num-big">01</div>
+        <div class="section-header-text">
+          <div class="section-title">What Is an API?</div>
+          <div class="section-subtitle">The word means interface, and that is the whole answer</div>
+        </div>
+      </div>
+
+      <p>
+        API stands for <strong>Application Programming Interface</strong>. Skip the expansion and look at the
+        middle word that matters: <strong>interface</strong>. An interface is an agreed way for two things to
+        talk without either one knowing how the other works inside.
+      </p>
+
+      <p>
+        You already use dozens of APIs. <code>Math.random()</code> is an API — you call it, you get a number,
+        and you have no idea what algorithm is inside. A TV remote is an API for a television. You press a
+        button; you do not need to understand the circuit board.
+      </p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">
+          An API is a <strong>boundary that lets one side change without breaking the other</strong>. That is
+          the entire reason it exists. A <strong>Web API</strong> is that same contract, exposed over HTTP,
+          so the two sides can be on different machines written in different languages.
+        </p>
+      </div>
+
+      <h3>Why doesn't React just talk to MongoDB?</h3>
+
+      <p>Ask the room this before answering. There are three real reasons:</p>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Concern</th><th>Direct DB access from the browser</th><th>Through an API</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cell-title">Security</td>
+            <td class="cell-muted">Database credentials ship to every user's browser</td>
+            <td class="cell-highlight">Credentials stay on the server</td>
+          </tr>
+          <tr>
+            <td class="cell-title">Trust</td>
+            <td class="cell-muted">Anyone can run any query, including DELETE</td>
+            <td class="cell-highlight">The server decides what is allowed</td>
+          </tr>
+          <tr>
+            <td class="cell-title">Change</td>
+            <td class="cell-muted">Rename a column and every client breaks</td>
+            <td class="cell-highlight">Change the schema, keep the contract</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        That third row is the one people underrate. Your web app, your mobile app and your admin dashboard all
+        speak to the same API. The API is the promise you keep while everything behind it is free to move.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 02 ══════════════ -->
+    <section class="section-block animate-fade-up" id="before-rest">
+      <div class="section-header">
+        <div class="section-num-big">02</div>
+        <div class="section-header-text">
+          <div class="section-title">The World Before REST</div>
+          <div class="section-subtitle">Understand the mess and the rules explain themselves</div>
+        </div>
+      </div>
+
+      <p>
+        Early web APIs had no shared convention. Every team invented its own URLs. Real endpoints looked like
+        this, in the same codebase:
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Actual endpoints from the pre-REST era</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">GET  <span class="token-val">/getUser?id=5</span>
+GET  <span class="token-val">/fetchAllUsers</span>
+GET  <span class="token-val">/user_list_v2</span>
+POST <span class="token-val">/createNewUser</span>
+POST <span class="token-val">/updateUserDetails</span>
+POST <span class="token-val">/deleteUserNow</span>
+POST <span class="token-val">/removeUserPermanent</span></pre>
+      </div>
+
+      <p>
+        Nothing here is technically wrong. It works. But every single endpoint has to be memorised, no two
+        APIs look alike, and you cannot guess anything. Onboarding to a new API meant reading a 40-page PDF.
+      </p>
+
+      <p>
+        Now look closely at <code>GET /getUser</code> and notice the redundancy: <strong>the word "get" is in
+        there twice.</strong> HTTP already had a verb. Everyone was ignoring it and inventing their own.
+      </p>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          In 2000, Roy Fielding — one of the authors of the HTTP spec itself — described a set of constraints
+          for web systems in his doctoral dissertation and called it <strong>REST</strong>: Representational
+          State Transfer. It is not a technology, a library, or something you install. It is a set of
+          agreements.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 03 ══════════════ -->
+    <section class="section-block animate-fade-up" id="rest-idea">
+      <div class="section-header">
+        <div class="section-num-big">03</div>
+        <div class="section-header-text">
+          <div class="section-title">The REST Idea</div>
+          <div class="section-subtitle">One sentence you should be able to recite</div>
+        </div>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">The Whole Thing</div>
+        <p class="concept-box-text">
+          <strong>The URL names a resource — a noun. The HTTP method describes the action — a verb.</strong>
+          Stop putting verbs in URLs, because HTTP already gave you a full set of them.
+        </p>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Intent</th><th>Pre-REST</th><th>REST</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cell-title">List all notes</td><td class="cell-muted">GET /getAllNotes</td><td class="cell-highlight">GET /notes</td></tr>
+          <tr><td class="cell-title">Get note 5</td><td class="cell-muted">GET /getNoteById?id=5</td><td class="cell-highlight">GET /notes/5</td></tr>
+          <tr><td class="cell-title">Create a note</td><td class="cell-muted">POST /createNote</td><td class="cell-highlight">POST /notes</td></tr>
+          <tr><td class="cell-title">Replace note 5</td><td class="cell-muted">POST /updateNote?id=5</td><td class="cell-highlight">PUT /notes/5</td></tr>
+          <tr><td class="cell-title">Delete note 5</td><td class="cell-muted">POST /deleteNoteNow?id=5</td><td class="cell-highlight">DELETE /notes/5</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Look at the right column. There are only <strong>two URLs</strong> — <code>/notes</code> and
+        <code>/notes/:id</code> — doing the work of five. And once you know the pattern, you can guess a REST
+        API you have never seen. <code>GET /products/12/reviews</code> needs no documentation.
+      </p>
+
+      <h3>Naming rules that follow from this</h3>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Rule</th><th>Bad</th><th>Good</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">Nouns, not verbs</span></td><td><span class="flag-val">/createNote</span></td><td>POST /notes</td></tr>
+          <tr><td><span class="flag-name">Plural collections</span></td><td><span class="flag-val">/note/5</span></td><td>/notes/5</td></tr>
+          <tr><td><span class="flag-name">Nesting for ownership</span></td><td><span class="flag-val">/getNotesOfUser?u=2</span></td><td>/users/2/notes</td></tr>
+          <tr><td><span class="flag-name">Lowercase with hyphens</span></td><td><span class="flag-val">/blogPosts</span></td><td>/blog-posts</td></tr>
+          <tr><td><span class="flag-name">Filters in the query</span></td><td><span class="flag-val">/notes/search/react</span></td><td>/notes?search=react</td></tr>
+        </tbody>
+      </table>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          Which endpoint is written in proper REST style for archiving all of user 3's notes?
+        </p>
+        <div class="quiz-options" id="quiz-rest-1">
+          <button onclick="answerQuiz('quiz-rest-1', this, false)" class="quiz-option">
+            A &nbsp;—&nbsp; POST /getArchivedNotesForUser?userId=3
+          </button>
+          <button onclick="answerQuiz('quiz-rest-1', this, true)" class="quiz-option">
+            B &nbsp;—&nbsp; GET /users/3/notes?archived=true
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-rest-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 04 ══════════════ -->
+    <section class="section-block animate-fade-up" id="constraints">
+      <div class="section-header">
+        <div class="section-num-big">04</div>
+        <div class="section-header-text">
+          <div class="section-title">The Rules That Actually Matter</div>
+          <div class="section-subtitle">Four constraints, each with a consequence you will feel later</div>
+        </div>
+      </div>
+
+      <div class="badge badge-accent">Rule 1 — Statelessness</div>
+
+      <p>
+        <strong>Every request must carry everything needed to serve it.</strong> The server remembers nothing
+        about you between requests. If you are logged in, you prove it again on every single call by sending
+        your token.
+      </p>
+
+      <p>Ask why before giving the answer. It sounds wasteful — until you draw this:</p>
+
+      <div class="scale-diagram">
+        <span class="highlight">Request 1</span> ──▶ Load Balancer ──▶ <span class="green">Server A</span> ✅<br>
+        <span class="highlight">Request 2</span> ──▶ Load Balancer ──▶ <span class="green">Server B</span> ✅<br>
+        <span class="highlight">Request 3</span> ──▶ Load Balancer ──▶ <span class="green">Server C</span> ✅<br>
+        <br>
+        <span class="red">Any server can answer any request, because none of them remember you.</span>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Remember This One</div>
+        <p class="concept-box-text">
+          Statelessness is <strong>why you can scale</strong>. If server A held your session in memory, every
+          one of your requests would have to come back to server A — and when A dies, you are logged out.
+          When we run this app across multiple pods in Kubernetes, this constraint is what makes it possible.
+        </p>
+      </div>
+
+      <div class="badge badge-blue">Rule 2 — Uniform interface</div>
+      <p>
+        Same resource naming, same methods, same status codes, everywhere. This is what lets a developer who
+        has never seen your API guess how it works. Consistency is the feature.
+      </p>
+
+      <div class="badge badge-blue">Rule 3 — Client–server separation</div>
+      <p>
+        The client owns the interface, the server owns the data. Either side can be rewritten completely as
+        long as the contract holds. Your React app could be replaced by a Flutter app tomorrow and the API
+        would not care.
+      </p>
+
+      <div class="badge badge-gold">Rule 4 — Cacheable</div>
+      <p>
+        Responses can say whether they may be stored and reused. A CDN can cache <code>GET /notes</code>
+        because it only reads. It can never cache a <code>POST</code>, because a POST changes something. This
+        is why the read/write split in your methods is not a cosmetic choice.
+      </p>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          <strong>Be honest about this:</strong> REST is a convention, not a law, and almost no real-world API
+          is fully RESTful. GraphQL, gRPC and tRPC exist because REST has genuine weaknesses — over-fetching,
+          many round trips, no typed contract. Knowing REST's limits is what separates a developer from
+          someone who memorised a tutorial.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 05 ══════════════ -->
+    <section class="section-block animate-fade-up" id="methods">
+      <div class="section-header">
+        <div class="section-num-big">05</div>
+        <div class="section-header-text">
+          <div class="section-title">Methods, Safety and Idempotency</div>
+          <div class="section-subtitle">Two words that sound academic and turn out to be about money</div>
+        </div>
+      </div>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Method</th><th>Does</th><th>Safe?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">GET</span></td><td>Read a resource</td><td><span class="flag-val">Safe + idempotent</span></td></tr>
+          <tr><td><span class="flag-name">POST</span></td><td>Create a new resource</td><td><span class="flag-val">Neither</span></td></tr>
+          <tr><td><span class="flag-name">PUT</span></td><td>Replace a resource entirely</td><td><span class="flag-val">Idempotent</span></td></tr>
+          <tr><td><span class="flag-name">PATCH</span></td><td>Update part of a resource</td><td><span class="flag-val">Usually not</span></td></tr>
+          <tr><td><span class="flag-name">DELETE</span></td><td>Remove a resource</td><td><span class="flag-val">Idempotent</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Two Definitions</div>
+        <p class="concept-box-text">
+          <strong>Safe</strong> means it changes nothing on the server — reading is safe.
+          <strong>Idempotent</strong> means doing it five times leaves the system in the same state as doing
+          it once.
+        </p>
+      </div>
+
+      <h3>Why this is not academic</h3>
+
+      <p>
+        A user clicks "Pay" and the network hiccups. Your client retries. Was the payment made once or twice?
+      </p>
+
+      <div class="scale-diagram">
+        <span class="red">POST /payments</span> &nbsp;×3 &nbsp;→&nbsp; <span class="red">three charges. Your customer is angry.</span><br>
+        <span class="green">PUT /notes/5</span> &nbsp;×3 &nbsp;→&nbsp; <span class="green">note 5 has the same content. Nothing to fix.</span><br>
+        <span class="green">DELETE /notes/5</span> &nbsp;×3 &nbsp;→&nbsp; <span class="green">note 5 is gone. Still gone. Still gone.</span>
+      </div>
+
+      <p>
+        This is also why your browser shows "Confirm form resubmission" when you refresh after submitting a
+        form. The browser knows a POST is not safe to repeat on its own. When we reach the payment gateway
+        module, this exact problem is what <strong>idempotency keys</strong> exist to solve.
+      </p>
+
+      <h3>PUT vs PATCH</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">The note before</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">{ <span class="token-yaml-key">"id"</span>: <span class="token-val">5</span>, <span class="token-yaml-key">"title"</span>: <span class="token-string">"Day 1"</span>, <span class="token-yaml-key">"body"</span>: <span class="token-string">"Express basics"</span> }
+
+<span class="token-comment">// PUT /notes/5  with  { "title": "Day 2" }</span>
+<span class="token-comment">// → replaces the whole thing. "body" is now gone.</span>
+
+<span class="token-comment">// PATCH /notes/5  with  { "title": "Day 2" }</span>
+<span class="token-comment">// → only title changes. "body" survives.</span></pre>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          A flaky network causes the same request to be sent three times. Which method is the dangerous one?
+        </p>
+        <div class="quiz-options" id="quiz-idem-1">
+          <button onclick="answerQuiz('quiz-idem-1', this, true)" class="quiz-option">
+            A &nbsp;—&nbsp; POST — it creates a new resource each time
+          </button>
+          <button onclick="answerQuiz('quiz-idem-1', this, false)" class="quiz-option">
+            B &nbsp;—&nbsp; DELETE — it removes three resources instead of one
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-idem-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 06 ══════════════ -->
+    <section class="section-block animate-fade-up" id="status">
+      <div class="section-header">
+        <div class="section-num-big">06</div>
+        <div class="section-header-text">
+          <div class="section-title">Status Codes</div>
+          <div class="section-subtitle">Learn the five families, not the sixty numbers</div>
+        </div>
+      </div>
+
+      <div class="scale-diagram">
+        <span class="green">2xx</span> — You asked, I did it.<br>
+        <span class="highlight">3xx</span> — It lives somewhere else now.<br>
+        <span class="red">4xx</span> — <span class="highlight">You</span> made a mistake.<br>
+        <span class="red">5xx</span> — <span class="highlight">I</span> made a mistake.
+      </div>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Code</th><th>Name</th><th>Send it when</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">200</span></td><td><span class="flag-val">OK</span></td><td>A successful read or update.</td></tr>
+          <tr><td><span class="flag-name">201</span></td><td><span class="flag-val">Created</span></td><td>A POST created something. Return the new resource.</td></tr>
+          <tr><td><span class="flag-name">204</span></td><td><span class="flag-val">No Content</span></td><td>Success, but there is nothing to send back. Perfect for DELETE.</td></tr>
+          <tr><td><span class="flag-name">400</span></td><td><span class="flag-val">Bad Request</span></td><td>The client sent something malformed or missing.</td></tr>
+          <tr><td><span class="flag-name">401</span></td><td><span class="flag-val">Unauthorized</span></td><td>I do not know who you are. Log in.</td></tr>
+          <tr><td><span class="flag-name">403</span></td><td><span class="flag-val">Forbidden</span></td><td>I know exactly who you are, and you are not allowed.</td></tr>
+          <tr><td><span class="flag-name">404</span></td><td><span class="flag-val">Not Found</span></td><td>That resource does not exist.</td></tr>
+          <tr><td><span class="flag-name">409</span></td><td><span class="flag-val">Conflict</span></td><td>Duplicate email, version clash, that kind of thing.</td></tr>
+          <tr><td><span class="flag-name">500</span></td><td><span class="flag-val">Server Error</span></td><td>Your code threw. Never blame the client for this.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          <strong>401 vs 403</strong> is asked in interviews constantly and most people get it backwards.
+          401 = <em>who are you?</em> 403 = <em>I know who you are, and no.</em>
+        </p>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          Returning <code>200 OK</code> with <code>{ "error": "not found" }</code> in the body is the most
+          common REST mistake in student projects. The client checks the status code first. Lying in the
+          status line breaks every tool that consumes your API — including the browser's own cache.
+        </p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          A logged-in normal user tries to open the admin dashboard. Which status code is correct?
+        </p>
+        <div class="quiz-options" id="quiz-status-1">
+          <button onclick="answerQuiz('quiz-status-1', this, false)" class="quiz-option">
+            A &nbsp;—&nbsp; 401 Unauthorized — they do not have permission
+          </button>
+          <button onclick="answerQuiz('quiz-status-1', this, true)" class="quiz-option">
+            B &nbsp;—&nbsp; 403 Forbidden — identity is known, permission is denied
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-status-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 07 ══════════════ -->
+    <section class="section-block animate-fade-up" id="notes-app">
+      <div class="section-header">
+        <div class="section-num-big">07</div>
+        <div class="section-header-text">
+          <div class="section-title">Building the Notes API</div>
+          <div class="section-subtitle">Two URLs, five routes, no database</div>
+        </div>
+      </div>
+
+      <p>
+        We store notes in a plain array. No MongoDB today — a database would add a second new thing to learn
+        and hide the REST lesson. Restart the server and your data is gone, and that is fine.
+      </p>
+
+      <h3>Design the contract before writing code</h3>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Method</th><th>Path</th><th>Does</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cell-title">GET</td><td class="cell-muted">/notes</td><td class="cell-highlight">List all notes → 200</td></tr>
+          <tr><td class="cell-title">GET</td><td class="cell-muted">/notes/:id</td><td class="cell-highlight">One note → 200, or 404</td></tr>
+          <tr><td class="cell-title">POST</td><td class="cell-muted">/notes</td><td class="cell-highlight">Create → 201, or 400</td></tr>
+          <tr><td class="cell-title">PUT</td><td class="cell-muted">/notes/:id</td><td class="cell-highlight">Replace → 200, or 404</td></tr>
+          <tr><td class="cell-title">DELETE</td><td class="cell-muted">/notes/:id</td><td class="cell-highlight">Remove → 204, or 404</td></tr>
+        </tbody>
+      </table>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Habit worth building</div>
+        <p class="concept-box-text">
+          Professionals write this table <strong>before</strong> the code. It is the contract. Once it is
+          agreed, the frontend team can start building against it while the backend is still empty.
+        </p>
+      </div>
+
+      <div class="badge badge-accent">Step 1 — Setup</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">mkdir</span> <span class="token-val">notes-api</span> <span class="token-operator">&amp;&amp;</span> <span class="token-command">cd</span> <span class="token-val">notes-api</span>
+<span class="token-command">npm</span> <span class="token-flag">init</span> <span class="token-flag">-y</span>
+<span class="token-command">npm</span> <span class="token-flag">install</span> <span class="token-val">express</span>
+<span class="token-comment"># then add  "type": "module"  to package.json</span></pre>
+      </div>
+
+      <div class="badge badge-accent">Step 2 — The whole API</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">index.js</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-yaml-key">import</span> express <span class="token-yaml-key">from</span> <span class="token-string">"express"</span>;
+
+<span class="token-yaml-key">const</span> app = express();
+app.use(express.json());
+
+<span class="token-yaml-key">let</span> notes  = [{ id: <span class="token-val">1</span>, title: <span class="token-string">"Day 1"</span>, body: <span class="token-string">"Express basics"</span> }];
+<span class="token-yaml-key">let</span> nextId = <span class="token-val">2</span>;
+
+<span class="token-comment">// ── READ ALL ──────────────────────────────</span>
+app.get(<span class="token-string">"/notes"</span>, (req, res) =&gt; {
+  <span class="token-yaml-key">const</span> { search } = req.query;
+
+  <span class="token-yaml-key">const</span> result = search
+    ? notes.filter(n =&gt; n.title.toLowerCase().includes(search.toLowerCase()))
+    : notes;
+
+  res.status(<span class="token-val">200</span>).json(result);
+});
+
+<span class="token-comment">// ── READ ONE ──────────────────────────────</span>
+app.get(<span class="token-string">"/notes/:id"</span>, (req, res) =&gt; {
+  <span class="token-yaml-key">const</span> note = notes.find(n =&gt; n.id === <span class="token-command">Number</span>(req.params.id));
+
+  <span class="token-yaml-key">if</span> (!note) {
+    <span class="token-yaml-key">return</span> res.status(<span class="token-val">404</span>).json({ error: <span class="token-string">"Note not found"</span> });
+  }
+
+  res.status(<span class="token-val">200</span>).json(note);
+});
+
+<span class="token-comment">// ── CREATE ────────────────────────────────</span>
+app.post(<span class="token-string">"/notes"</span>, (req, res) =&gt; {
+  <span class="token-yaml-key">const</span> { title, body } = req.body;
+
+  <span class="token-yaml-key">if</span> (!title) {
+    <span class="token-yaml-key">return</span> res.status(<span class="token-val">400</span>).json({ error: <span class="token-string">"title is required"</span> });
+  }
+
+  <span class="token-yaml-key">const</span> note = { id: nextId++, title, body: body <span class="token-operator">??</span> <span class="token-string">""</span> };
+  notes.push(note);
+
+  res.status(<span class="token-val">201</span>).json(note);
+});
+
+<span class="token-comment">// ── REPLACE ───────────────────────────────</span>
+app.put(<span class="token-string">"/notes/:id"</span>, (req, res) =&gt; {
+  <span class="token-yaml-key">const</span> id    = <span class="token-command">Number</span>(req.params.id);
+  <span class="token-yaml-key">const</span> index = notes.findIndex(n =&gt; n.id === id);
+
+  <span class="token-yaml-key">if</span> (index === <span class="token-val">-1</span>) {
+    <span class="token-yaml-key">return</span> res.status(<span class="token-val">404</span>).json({ error: <span class="token-string">"Note not found"</span> });
+  }
+
+  <span class="token-yaml-key">const</span> { title, body } = req.body;
+
+  <span class="token-yaml-key">if</span> (!title) {
+    <span class="token-yaml-key">return</span> res.status(<span class="token-val">400</span>).json({ error: <span class="token-string">"title is required"</span> });
+  }
+
+  notes[index] = { id, title, body: body <span class="token-operator">??</span> <span class="token-string">""</span> };
+  res.status(<span class="token-val">200</span>).json(notes[index]);
+});
+
+<span class="token-comment">// ── DELETE ────────────────────────────────</span>
+app.delete(<span class="token-string">"/notes/:id"</span>, (req, res) =&gt; {
+  <span class="token-yaml-key">const</span> id    = <span class="token-command">Number</span>(req.params.id);
+  <span class="token-yaml-key">const</span> index = notes.findIndex(n =&gt; n.id === id);
+
+  <span class="token-yaml-key">if</span> (index === <span class="token-val">-1</span>) {
+    <span class="token-yaml-key">return</span> res.status(<span class="token-val">404</span>).json({ error: <span class="token-string">"Note not found"</span> });
+  }
+
+  notes.splice(index, <span class="token-val">1</span>);
+  res.sendStatus(<span class="token-val">204</span>);
+});
+
+app.listen(<span class="token-val">3000</span>, () =&gt; <span class="token-command">console</span>.log(<span class="token-string">"http://localhost:3000"</span>));</pre>
+      </div>
+
+      <h3>Five details worth pausing on</h3>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Detail</th><th>In the code</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">Number()</span></td><td><span class="flag-val">req.params.id</span></td><td>Params are strings. Without this, <code>===</code> never matches numeric ids.</td></tr>
+          <tr><td><span class="flag-name">return</span></td><td><span class="flag-val">before every res</span></td><td>Stops execution. Without it you send two responses and Express throws.</td></tr>
+          <tr><td><span class="flag-name">201</span></td><td><span class="flag-val">on POST</span></td><td>Says "I made something new", and returns it so the client learns its id.</td></tr>
+          <tr><td><span class="flag-name">204</span></td><td><span class="flag-val">on DELETE</span></td><td>Success with no body. Do not invent a fake success object.</td></tr>
+          <tr><td><span class="flag-name">400</span></td><td><span class="flag-val">missing title</span></td><td>Never trust the client. Validate before you store.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          Add a <code>GET /notes/search</code> route to this file and put it <strong>above</strong>
+          <code>/notes/:id</code>, or it will never run — the dynamic route matches first. This is the
+          ordering trap from Note 02, and it will find you.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 08 ══════════════ -->
+    <section class="section-block animate-fade-up" id="testing">
+      <div class="section-header">
+        <div class="section-num-big">08</div>
+        <div class="section-header-text">
+          <div class="section-title">Testing It</div>
+          <div class="section-subtitle">The browser can only do GET — you need better tools</div>
+        </div>
+      </div>
+
+      <p>
+        Typing a URL into Chrome always sends a GET. To test POST, PUT and DELETE you need curl, Postman, or
+        the REST Client extension in VS Code. Learn curl — it works everywhere, including on a server over SSH.
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-comment"># List all</span>
+<span class="token-command">curl</span> <span class="token-string">http://localhost:3000/notes</span>
+
+<span class="token-comment"># One note</span>
+<span class="token-command">curl</span> <span class="token-string">http://localhost:3000/notes/1</span>
+
+<span class="token-comment"># Create — watch for 201 in the response headers</span>
+<span class="token-command">curl</span> <span class="token-flag">-i</span> <span class="token-flag">-X</span> <span class="token-val">POST</span> <span class="token-string">http://localhost:3000/notes</span> \
+  <span class="token-flag">-H</span> <span class="token-string">"Content-Type: application/json"</span> \
+  <span class="token-flag">-d</span> <span class="token-string">'{"title":"Day 2","body":"REST"}'</span>
+
+<span class="token-comment"># Replace</span>
+<span class="token-command">curl</span> <span class="token-flag">-X</span> <span class="token-val">PUT</span> <span class="token-string">http://localhost:3000/notes/1</span> \
+  <span class="token-flag">-H</span> <span class="token-string">"Content-Type: application/json"</span> \
+  <span class="token-flag">-d</span> <span class="token-string">'{"title":"Updated"}'</span>
+
+<span class="token-comment"># Delete — expect 204 and an empty body</span>
+<span class="token-command">curl</span> <span class="token-flag">-i</span> <span class="token-flag">-X</span> <span class="token-val">DELETE</span> <span class="token-string">http://localhost:3000/notes/1</span>
+
+<span class="token-comment"># Delete it again — expect 404</span>
+<span class="token-command">curl</span> <span class="token-flag">-i</span> <span class="token-flag">-X</span> <span class="token-val">DELETE</span> <span class="token-string">http://localhost:3000/notes/1</span></pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          The <code>-i</code> flag prints the response headers, including the status line. Without it you only
+          see the body and you cannot tell 200 from 201 from 404. Use <code>-i</code> while testing.
+        </p>
+      </div>
+
+      <div class="badge badge-green">Verify — your API is correct if all of these pass</div>
+      <ul>
+        <li><code>GET /notes/9999</code> returns <strong>404</strong>, not an empty 200.</li>
+        <li><code>POST /notes</code> with no title returns <strong>400</strong>.</li>
+        <li><code>POST /notes</code> with a title returns <strong>201</strong> and includes the new id.</li>
+        <li><code>DELETE</code> on an existing note returns <strong>204</strong> with an empty body.</li>
+        <li>The same <code>DELETE</code> run twice returns 204 then 404 — and the data is identical either way.</li>
+      </ul>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 09 ══════════════ -->
+    <section class="section-block animate-fade-up" id="assignment">
+      <div class="section-header">
+        <div class="section-num-big">09</div>
+        <div class="section-header-text">
+          <div class="section-title">Assignment — Rebuild It in Hono</div>
+          <div class="section-subtitle">A framework I am not going to teach you</div>
+        </div>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Why This Assignment Exists</div>
+        <p class="concept-box-text">
+          If you can build the same API in a framework nobody taught you, then you learned
+          <strong>backend</strong>. If you cannot, you learned <strong>Express syntax</strong>. The concepts
+          are the thing that transfers between jobs; the syntax is looked up in thirty seconds.
+        </p>
+      </div>
+
+      <p>
+        <a href="https://hono.dev" style="color: var(--accent3);">Hono</a> is a small, fast web framework.
+        Its routing looks familiar on purpose, but request and response handling are different — you will
+        have to read the documentation, and that is the point. Reading docs is the skill.
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Getting started</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">npm</span> <span class="token-flag">create</span> <span class="token-val">hono@latest</span> <span class="token-val">notes-hono</span>
+<span class="token-comment"># choose the nodejs template if you do not have Bun installed</span></pre>
+      </div>
+
+      <div class="badge badge-blue">Base</div>
+      <ul>
+        <li>Finish the Express version properly — all five routes, correct status codes, 404 and 400 handled.</li>
+        <li>Test every route with curl and save the commands in a <code>requests.http</code> or a text file.</li>
+      </ul>
+
+      <div class="badge badge-accent">Push</div>
+      <ul>
+        <li>Rebuild all five routes in Hono. Same paths, same methods, same status codes.</li>
+        <li>Write three lines in your README on what was different and what was identical.</li>
+        <li>Add <code>GET /notes?search=</code> to both versions and keep the behaviour the same.</li>
+      </ul>
+
+      <div class="badge badge-gold">Break</div>
+      <ul>
+        <li>Add a second resource — <code>/notes/:id/tags</code> — and design the routes yourself using the naming rules in section 3.</li>
+        <li>Prove your PUT is idempotent: run it five times and show the state is unchanged after the first.</li>
+        <li>Add pagination with <code>?page=</code> and <code>?limit=</code>, and return the total count in a header.</li>
+      </ul>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          Hono runs on Bun, which is the same runtime we will use later in the industry simulation. Tonight's
+          homework is quietly setting up something you will need in a few weeks.
+        </p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          Your POST route successfully creates a note. What should you send back?
+        </p>
+        <div class="quiz-options" id="quiz-final-1">
+          <button onclick="answerQuiz('quiz-final-1', this, false)" class="quiz-option">
+            A &nbsp;—&nbsp; 200 with { "message": "Note created successfully" }
+          </button>
+          <button onclick="answerQuiz('quiz-final-1', this, true)" class="quiz-option">
+            B &nbsp;—&nbsp; 201 with the created note, including its new id
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-final-1-feedback"></div>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">One-Line Summary</div>
+        <p class="concept-box-text">
+          An API is a contract. REST is a shared convention for writing that contract:
+          <strong>URLs are nouns, methods are verbs, status codes tell the truth, and the server remembers
+          nothing between requests.</strong>
+        </p>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Sheryians Coding School · Kodr · Backend Note 03</span>
+      <span>APIs, REST &amp; the Notes App</span>
+    </footer>
+
+  </main>
+
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('.code-pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const original = btn.textContent;
+    btn.textContent = 'copied';
+    setTimeout(() => { btn.textContent = original; }, 1400);
+  });
+}
+
+function answerQuiz(quizId, btn, isCorrect) {
+  const container = document.getElementById(quizId);
+  const feedback  = document.getElementById(quizId + '-feedback');
+
+  container.querySelectorAll('.quiz-option').forEach(b => {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '\u2713 Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '\u2717 Not quite \u2014 try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+// Sidebar scroll-spy
+(function () {
+  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const sections = links
+    .map(l => document.querySelector(l.getAttribute('href')))
+    .filter(Boolean);
+
+  if (!sections.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = links.find(l => l.getAttribute('href') === '#' + entry.target.id);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Note 02 — Servers, Express &amp; Getting Data In · Sheryians Coding School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+}
+
+/* ── Typography & Resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Keyframe Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes dataFlow {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-fade-up     { animation: fadeUp 0.4s ease both; }
+.animate-slide-left  { animation: slideInLeft 0.5s ease both; }
+.animate-slide-right { animation: slideInRight 0.5s ease both; }
+.animate-float-pulse { animation: floatPulse 2.5s ease-in-out infinite; }
+.animate-data-flow   { animation: dataFlow 1.5s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background-color: var(--ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 32px 0 40px;
+}
+
+.main-content {
+  flex: 1;
+  max-width: calc(100% - 260px);
+  padding: 56px 56px 80px;
+}
+
+@media (max-width: 768px) {
+  .layout-container { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: relative; padding: 20px 0 24px; }
+  .main-content { max-width: 100%; padding: 32px 24px 64px; }
+}
+
+/* ── Sidebar / Navigation ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+
+.nav-brand .logo {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.nav-brand .logo .accent-dot { color: var(--accent); }
+
+.nav-brand .sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.nav-group-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 24px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color: #FFFFFF; background-color: rgba(255, 255, 255, 0.04); }
+.nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nav-link.active {
+  color: #FFFFFF;
+  border-left-color: var(--accent);
+  background-color: rgba(200, 75, 31, 0.08);
+}
+
+.nav-num {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  border-radius: 4px;
+  color: inherit;
+}
+.nav-link:hover .nav-num,
+.nav-link.active .nav-num { background-color: var(--accent); color: #FFFFFF; }
+
+/* ── Hero ── */
+.hero {
+  margin-bottom: 64px;
+  padding-bottom: 40px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+
+.hero-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.65;
+  margin: 0 0 24px;
+}
+
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.hero-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 9999px;
+  padding: 2px 12px;
+}
+
+/* ── Sections ── */
+.section-block { margin-bottom: 72px; scroll-margin-top: 24px; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.section-header-text { padding-top: 4px; }
+
+.section-num-big {
+  font-family: 'Fraunces', serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--rule);
+  user-select: none;
+  line-height: 1;
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.section-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+h4 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  color: #2A2720;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+ul, ol { font-size: 14.5px; color: #2A2720; line-height: 1.7; padding-left: 20px; }
+li { margin-bottom: 6px; }
+
+code, .inline-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background-color: var(--paper3);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.code-pre code, .code-pre .inline-code {
+  background: none; border: none; padding: 0; color: inherit; font-size: inherit;
+}
+
+/* ── Concept Box ── */
+.concept-box {
+  background-color: var(--paper2);
+  border-left: 3px solid var(--accent3);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.concept-box-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--accent3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.concept-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Note Box ── */
+.note-box {
+  background-color: #FEF9EC;
+  border: 1px solid #EDD97A;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.note-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #5C4A00;
+  margin: 0;
+}
+.note-box-text strong { color: #3D3000; }
+
+/* ── Warning Box ── */
+.warning-box {
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.warning-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #7F1D1D;
+  margin: 0;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+
+/* ── Code Block ── */
+.code-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: #13141A;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.code-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.code-copy-btn {
+  background: none;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.code-copy-btn:hover { color: rgba(255, 255, 255, 0.7); }
+.code-copy-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.code-pre {
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255, 255, 255, 0.3); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Flag Table ── */
+.flag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.flag-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--paper3);
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--rule);
+}
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); }
+.flag-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--flag-c);
+}
+.flag-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--val-c);
+}
+
+/* ── Compare Table ── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.compare-table th {
+  background-color: var(--ink);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  border: 1px solid var(--ink);
+}
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); }
+.compare-table tbody tr { transition: background-color 100ms ease; }
+.compare-table tbody tr:hover { background-color: var(--paper2); }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow Diagram ── */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; }
+.flow-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.flow-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Scale Diagram ── */
+.scale-diagram {
+  background-color: var(--paper2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--muted);
+  overflow-x: auto;
+}
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green     { color: var(--accent2); }
+.scale-diagram .red       { color: var(--accent); }
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ── Quiz ── */
+.quiz-box {
+  background-color: var(--ink);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 32px 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.quiz-question {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option {
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: #FFFFFF;
+  background-color: rgba(200, 75, 31, 0.08);
+}
+.quiz-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.quiz-option.correct {
+  border-color: var(--accent2) !important;
+  background-color: rgba(26, 107, 74, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-option.incorrect {
+  border-color: var(--accent) !important;
+  background-color: rgba(200, 75, 31, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-feedback {
+  margin-top: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.quiz-feedback.correct   { color: var(--accent2); }
+.quiz-feedback.incorrect { color: var(--accent); }
+.quiz-feedback.hidden    { display: none; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+/* ── Footer ── */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 2px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 64px;
+}
+
+  </style>
+</head>
+<body>
+<div class="layout-container">
+  <nav class="sidebar">
+    <div class="nav-brand">
+      <div class="logo">Express<span class="accent-dot">.</span>Server</div>
+      <div class="sub">Sheryians Coding School</div>
+    </div>
+
+    <div class="nav-group-label">Foundations</div>
+    <a href="#what-is-server" class="nav-link active"><span class="nav-num">1</span>What Is a Server</a>
+    <a href="#ports" class="nav-link"><span class="nav-num">2</span>Ports &amp; Listening</a>
+    <a href="#http-raw" class="nav-link"><span class="nav-num">3</span>What a Request Looks Like</a>
+
+    <div class="nav-group-label">Express</div>
+    <a href="#first-server" class="nav-link"><span class="nav-num">4</span>Your First Server</a>
+    <a href="#routes" class="nav-link"><span class="nav-num">5</span>Routes</a>
+
+    <div class="nav-group-label">Client → Server</div>
+    <a href="#four-channels" class="nav-link"><span class="nav-num">6</span>The Four Channels</a>
+    <a href="#params" class="nav-link"><span class="nav-num">7</span>Route Params</a>
+    <a href="#query" class="nav-link"><span class="nav-num">8</span>Query Strings</a>
+    <a href="#body" class="nav-link"><span class="nav-num">9</span>Request Body</a>
+
+    <div class="nav-group-label">Practice</div>
+    <a href="#homework" class="nav-link"><span class="nav-num">10</span>Try It Yourself</a>
+  </nav>
+
+  <main class="main-content">
+
+    <header class="hero animate-fade-up">
+      <div class="hero-eyebrow">Backend · Note 02</div>
+      <h1>Servers, Express<br>and <em>Getting Data In</em></h1>
+      <p class="hero-desc">
+        A server is a machine that is programmed to serve its users. This note takes that sentence apart —
+        what the machine is, what "serve" means, and the four different doors a client can push data through.
+      </p>
+      <div class="hero-tags">
+        <span class="hero-tag">HTTP</span>
+        <span class="hero-tag">Express</span>
+        <span class="hero-tag">Routing</span>
+        <span class="hero-tag">params · query · body</span>
+      </div>
+    </header>
+
+    <!-- ══════════════ 01 ══════════════ -->
+    <section class="section-block animate-fade-up" id="what-is-server">
+      <div class="section-header">
+        <div class="section-num-big">01</div>
+        <div class="section-header-text">
+          <div class="section-title">What Is a Server?</div>
+          <div class="section-subtitle">Start with the sentence, then take it apart</div>
+        </div>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Working Definition</div>
+        <p class="concept-box-text">
+          <strong>A server is a machine that is programmed to serve its users</strong> — and the users we are
+          talking about are called <strong>clients</strong>.
+        </p>
+      </div>
+
+      <p>
+        That definition is correct, and it is where most people stop. Take it one layer deeper, because the
+        word "machine" is doing something sneaky in that sentence.
+      </p>
+
+      <h3>The machine is not special</h3>
+
+      <p>
+        There is no such thing as "server hardware" you must buy. The laptop in front of you becomes a server
+        the moment you run a program that waits for requests. <strong>Server is a role, not a
+        device.</strong>
+      </p>
+
+      <p>
+        And the role flips depending on who is asking. Your Express app is a server when React calls it. That
+        very same app is a <em>client</em> when it calls MongoDB. When we get to microservices, every service
+        is both at once.
+      </p>
+
+      <div class="scale-diagram">
+        <span class="highlight">React app</span> &nbsp;──request──▶&nbsp; <span class="green">Express app</span> &nbsp;──request──▶&nbsp; <span class="highlight">MongoDB</span><br>
+        &nbsp;&nbsp;<span class="red">client</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">server + client</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">server</span>
+      </div>
+
+      <h3>"Programmed to serve" means one loop</h3>
+
+      <p>
+        Strip away every framework and a server is one idea: <strong>a program that starts, claims a door
+        number, and then waits forever.</strong> A request arrives, it responds, it goes back to waiting.
+        Nothing more.
+      </p>
+
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Start the program</div>
+            <div class="flow-desc">node index.js — your code is now a running process.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Bind to a port</div>
+            <div class="flow-desc">Ask the operating system: send me anything that arrives on 3000.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Wait</div>
+            <div class="flow-desc">The process does not exit. It sits idle, costing almost nothing.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Request arrives → run a function → send a response → wait again</div>
+            <div class="flow-desc">Everything you will build this month is a variation on this line.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 02 ══════════════ -->
+    <section class="section-block animate-fade-up" id="ports">
+      <div class="section-header">
+        <div class="section-num-big">02</div>
+        <div class="section-header-text">
+          <div class="section-title">Ports and the Listening Loop</div>
+          <div class="section-subtitle">Two questions almost nobody can answer properly</div>
+        </div>
+      </div>
+
+      <h3>Question 1 — what is a port, really?</h3>
+
+      <p>
+        Your machine has one IP address but runs many programs that want network traffic. When a packet
+        arrives, the operating system needs to know which process gets it. The <strong>port number is that
+        routing label</strong>. IP finds the machine; the port finds the program.
+      </p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Analogy</div>
+        <p class="concept-box-text">
+          The IP address is the building's street address. The <strong>port is the flat number</strong>. The
+          postman gets to the right building with one and to the right door with the other. Only one family
+          can live in flat 3000.
+        </p>
+      </div>
+
+      <div class="badge badge-green">Verify — run this in class</div>
+
+      <p>Start your server on port 3000. Now open a second terminal and start another one on 3000 too.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">node</span> <span class="token-val">index.js</span>
+<span class="token-comment"># Error: listen EADDRINUSE: address already in use :::3000</span></pre>
+      </div>
+
+      <p>
+        <code>EADDRINUSE</code> is the OS telling you flat 3000 is occupied. This is the single most common
+        error in backend development, and now you know it has nothing to do with your code.
+      </p>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Port</th><th>Usually</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">80</span></td><td><span class="flag-val">HTTP</span></td><td>The default when a browser sees http:// with no port.</td></tr>
+          <tr><td><span class="flag-name">443</span></td><td><span class="flag-val">HTTPS</span></td><td>The default for https://. This is why you never type a port on real websites.</td></tr>
+          <tr><td><span class="flag-name">3000 / 5000 / 8080</span></td><td><span class="flag-val">Development</span></td><td>Convention only. Nothing special about them.</td></tr>
+          <tr><td><span class="flag-name">27017</span></td><td><span class="flag-val">MongoDB</span></td><td>Your database is a server too, listening on its own port.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Question 2 — why doesn't the program exit?</h3>
+
+      <p>
+        Run a normal script and Node finishes the last line and quits. Run <code>app.listen(3000)</code> and
+        the process sits there forever, even though there is no more code. Ask yourself why before reading on.
+      </p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">
+          Node exits when it has nothing left to do. A listening server registers an
+          <strong>active handle</strong> with the event loop — an open socket that might produce work at any
+          moment. As long as one active handle exists, the event loop has a reason to keep spinning, so the
+          process stays alive. <code>Ctrl + C</code> is you telling the OS to kill it.
+        </p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          You see <code>EADDRINUSE</code> when starting your server. What actually happened?
+        </p>
+        <div class="quiz-options" id="quiz-port-1">
+          <button onclick="answerQuiz('quiz-port-1', this, false)" class="quiz-option">
+            A &nbsp;—&nbsp; Express failed to install correctly and cannot create a server
+          </button>
+          <button onclick="answerQuiz('quiz-port-1', this, true)" class="quiz-option">
+            B &nbsp;—&nbsp; Another process on this machine already claimed that port
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-port-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 03 ══════════════ -->
+    <section class="section-block animate-fade-up" id="http-raw">
+      <div class="section-header">
+        <div class="section-num-big">03</div>
+        <div class="section-header-text">
+          <div class="section-title">What a Request Actually Looks Like</div>
+          <div class="section-subtitle">There is no magic here — it is a string</div>
+        </div>
+      </div>
+
+      <p>
+        Before Express hands you a neat <code>req</code> object, something arrives over the network. See it
+        with your own eyes. Start any server on 3000 and run this:
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">curl</span> <span class="token-flag">-v</span> <span class="token-string">"http://localhost:3000/notes/5?sort=desc"</span></pre>
+      </div>
+
+      <p>The lines starting with <code>&gt;</code> are what your machine sent. It is plain text:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Raw HTTP request</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">GET</span> <span class="token-val">/notes/5?sort=desc</span> <span class="token-flag">HTTP/1.1</span>
+<span class="token-yaml-key">Host</span>: localhost:3000
+<span class="token-yaml-key">User-Agent</span>: curl/8.4.0
+<span class="token-yaml-key">Accept</span>: */*
+<span class="token-comment">(blank line)</span>
+<span class="token-comment">(body would go here, if there were one)</span></pre>
+      </div>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Part</th><th>Example</th><th>What it carries</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">Method</span></td><td><span class="flag-val">GET</span></td><td>What you want done. Verb.</td></tr>
+          <tr><td><span class="flag-name">Path</span></td><td><span class="flag-val">/notes/5</span></td><td>Which thing you want it done to. Noun.</td></tr>
+          <tr><td><span class="flag-name">Query string</span></td><td><span class="flag-val">?sort=desc</span></td><td>Options and filters. Everything after the ?.</td></tr>
+          <tr><td><span class="flag-name">Headers</span></td><td><span class="flag-val">Host, Accept</span></td><td>Metadata about the request. Key–value pairs.</td></tr>
+          <tr><td><span class="flag-name">Blank line</span></td><td><span class="flag-val">\r\n</span></td><td>The separator that says "headers are finished".</td></tr>
+          <tr><td><span class="flag-name">Body</span></td><td><span class="flag-val">JSON, form data</span></td><td>The payload. Everything after the blank line.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          The <strong>Host</strong> header exists because one server IP can host hundreds of websites. Without
+          it, a machine receiving a request for <code>/</code> would have no idea which site you meant.
+        </p>
+      </div>
+
+      <p>
+        Hold on to this picture. In section 6 you will see that <code>req.params</code>,
+        <code>req.query</code> and <code>req.body</code> are not three magical objects — they are three
+        different slices of the text above.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 04 ══════════════ -->
+    <section class="section-block animate-fade-up" id="first-server">
+      <div class="section-header">
+        <div class="section-num-big">04</div>
+        <div class="section-header-text">
+          <div class="section-title">Your First Express Server</div>
+          <div class="section-subtitle">Six lines, and you know what every one of them does</div>
+        </div>
+      </div>
+
+      <div class="badge badge-accent">Step 1 — Install</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">npm</span> <span class="token-flag">init</span> <span class="token-flag">-y</span>
+<span class="token-command">npm</span> <span class="token-flag">install</span> <span class="token-val">express</span></pre>
+      </div>
+
+      <div class="badge badge-accent">Step 2 — Write it</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">index.js</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-yaml-key">import</span> express <span class="token-yaml-key">from</span> <span class="token-string">"express"</span>;
+
+<span class="token-yaml-key">const</span> app = express();
+
+app.get(<span class="token-string">"/"</span>, (req, res) =&gt; {
+  res.send(<span class="token-string">"Server is alive"</span>);
+});
+
+app.listen(<span class="token-val">3000</span>, () =&gt; {
+  <span class="token-command">console</span>.log(<span class="token-string">"Listening on http://localhost:3000"</span>);
+});</pre>
+      </div>
+
+      <table class="flag-table">
+        <thead>
+          <tr><th>Line</th><th>What it is</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="flag-name">express()</span></td><td><span class="flag-val">app</span></td><td>Creates the application — really just a request handler with a route table attached.</td></tr>
+          <tr><td><span class="flag-name">app.get()</span></td><td><span class="flag-val">route</span></td><td>Adds an entry to that table: "if the method is GET and the path is /, run this function".</td></tr>
+          <tr><td><span class="flag-name">req</span></td><td><span class="flag-val">request</span></td><td>Everything the client sent you.</td></tr>
+          <tr><td><span class="flag-name">res</span></td><td><span class="flag-val">response</span></td><td>Your tools for replying. Nothing is sent until you call a method on it.</td></tr>
+          <tr><td><span class="flag-name">app.listen()</span></td><td><span class="flag-val">3000</span></td><td>Binds the port and starts the waiting loop.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>What is Express, actually?</h3>
+
+      <p>
+        Node already ships an <code>http</code> module that can do all of this. Express is a thin layer on top
+        that gives you two things: a <strong>router</strong> so you stop writing giant if-else chains on
+        <code>req.url</code>, and a <strong>middleware chain</strong> so you can run shared logic before your
+        handlers.
+      </p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">
+          <code>req</code> and <code>res</code> are <strong>not Express objects</strong>. They are Node's own
+          <code>IncomingMessage</code> and <code>ServerResponse</code>, with extra convenience methods bolted
+          on. Prove it: <code>req instanceof http.IncomingMessage</code> returns <strong>true</strong>.
+          Express borrowed them; it did not invent them.
+        </p>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          Run your server with <code>node --watch index.js</code> and it restarts on every save. You do not
+          need nodemon for this any more — it is built into modern Node.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 05 ══════════════ -->
+    <section class="section-block animate-fade-up" id="routes">
+      <div class="section-header">
+        <div class="section-num-big">05</div>
+        <div class="section-header-text">
+          <div class="section-title">Routes</div>
+          <div class="section-subtitle">A route is method + path + handler. That's the whole idea.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">index.js</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.get(<span class="token-string">"/notes"</span>,     (req, res) =&gt; res.send(<span class="token-string">"list of notes"</span>));
+app.post(<span class="token-string">"/notes"</span>,    (req, res) =&gt; res.send(<span class="token-string">"created a note"</span>));
+app.put(<span class="token-string">"/notes/1"</span>,  (req, res) =&gt; res.send(<span class="token-string">"replaced note 1"</span>));
+app.delete(<span class="token-string">"/notes/1"</span>,(req, res) =&gt; res.send(<span class="token-string">"deleted note 1"</span>));</pre>
+      </div>
+
+      <p>
+        Notice that <code>/notes</code> appears twice with two different methods and two different handlers.
+        <strong>The path alone does not identify a route — the method is half of the address.</strong> That
+        idea becomes the foundation of REST in the next note.
+      </p>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          <strong>Routes are an ordered list, and the first match wins.</strong> Express walks your routes
+          top to bottom. This causes a bug you will hit today.
+        </p>
+      </div>
+
+      <h3>The route-ordering trap</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Broken</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.get(<span class="token-string">"/notes/:id"</span>,     handlerA);
+app.get(<span class="token-string">"/notes/search"</span>,  handlerB);   <span class="token-comment">// never runs!</span>
+
+<span class="token-comment">// GET /notes/search matches the FIRST line,</span>
+<span class="token-comment">// with req.params.id === "search"</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Fixed</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.get(<span class="token-string">"/notes/search"</span>,  handlerB);   <span class="token-comment">// specific first</span>
+app.get(<span class="token-string">"/notes/:id"</span>,     handlerA);   <span class="token-comment">// dynamic last</span></pre>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Rule to remember</div>
+        <p class="concept-box-text">
+          <strong>Specific routes go above dynamic routes.</strong> A <code>:param</code> will happily swallow
+          any word you put in that position, including words you meant as fixed paths.
+        </p>
+      </div>
+
+      <h3>Sending responses</h3>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Method</th><th>Sends</th><th>Use for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cell-title">res.send()</td><td class="cell-muted">Guesses the content type</td><td class="cell-highlight">Quick tests only</td></tr>
+          <tr><td class="cell-title">res.json()</td><td class="cell-muted">JSON + correct Content-Type header</td><td class="cell-highlight">Every API response</td></tr>
+          <tr><td class="cell-title">res.status(404).json()</td><td class="cell-muted">JSON with a chosen status code</td><td class="cell-highlight">Anything that is not a plain success</td></tr>
+          <tr><td class="cell-title">res.sendStatus(204)</td><td class="cell-muted">Status code with no body</td><td class="cell-highlight">Successful deletes</td></tr>
+        </tbody>
+      </table>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          You defined <code>/notes/:id</code> before <code>/notes/archive</code>. A request to
+          <code>/notes/archive</code> arrives. What happens?
+        </p>
+        <div class="quiz-options" id="quiz-route-1">
+          <button onclick="answerQuiz('quiz-route-1', this, true)" class="quiz-option">
+            A &nbsp;—&nbsp; The :id route runs, with req.params.id set to "archive"
+          </button>
+          <button onclick="answerQuiz('quiz-route-1', this, false)" class="quiz-option">
+            B &nbsp;—&nbsp; Express picks the more specific route automatically
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-route-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 06 ══════════════ -->
+    <section class="section-block animate-fade-up" id="four-channels">
+      <div class="section-header">
+        <div class="section-num-big">06</div>
+        <div class="section-header-text">
+          <div class="section-title">The Four Channels</div>
+          <div class="section-subtitle">Every byte a client sends you arrives through one of these</div>
+        </div>
+      </div>
+
+      <p>Go back to the raw request from section 3 and label it. That is all Express is doing for you:</p>
+
+      <div class="scale-diagram">
+        <span class="highlight">POST</span> <span class="green">/notes/5</span><span class="red">?sort=desc</span> HTTP/1.1<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="green">↑ req.params</span> &nbsp;&nbsp;<span class="red">↑ req.query</span><br>
+        <span class="highlight">Authorization</span>: Bearer abc123 &nbsp;&nbsp;<span class="green">← req.headers</span><br>
+        <span class="highlight">Content-Type</span>: application/json<br>
+        <br>
+        { "title": "Backend Day 1" } &nbsp;&nbsp;<span class="green">← req.body</span>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Channel</th><th>Lives in</th><th>Use it for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cell-title">req.params</td><td class="cell-muted">Inside the path</td><td class="cell-highlight">Which resource — an id or a slug</td></tr>
+          <tr><td class="cell-title">req.query</td><td class="cell-muted">After the ? in the URL</td><td class="cell-highlight">How to filter, sort, paginate</td></tr>
+          <tr><td class="cell-title">req.body</td><td class="cell-muted">After the blank line</td><td class="cell-highlight">The data being created or updated</td></tr>
+          <tr><td class="cell-title">req.headers</td><td class="cell-muted">Key–value lines at the top</td><td class="cell-highlight">Auth tokens, content type, metadata</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          <strong>Never put a password or token in the query string.</strong> URLs are written into server
+          access logs, browser history, and the Referer header sent to third-party sites. Secrets belong in
+          the <code>Authorization</code> header or the body — never the URL.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 07 ══════════════ -->
+    <section class="section-block animate-fade-up" id="params">
+      <div class="section-header">
+        <div class="section-num-big">07</div>
+        <div class="section-header-text">
+          <div class="section-title">Route Params</div>
+          <div class="section-subtitle">Naming which specific thing you want</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">index.js</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.get(<span class="token-string">"/notes/:id"</span>, (req, res) =&gt; {
+  <span class="token-command">console</span>.log(req.params);        <span class="token-comment">// { id: '5' }</span>
+  res.json({ requested: req.params.id });
+});
+
+<span class="token-comment">// Multiple params are fine:</span>
+app.get(<span class="token-string">"/users/:userId/notes/:noteId"</span>, (req, res) =&gt; {
+  <span class="token-command">console</span>.log(req.params);        <span class="token-comment">// { userId: '2', noteId: '9' }</span>
+});</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          <strong>Params are always strings.</strong> <code>/notes/5</code> gives you <code>"5"</code>, not
+          <code>5</code>. So <code>note.id === req.params.id</code> is <code>false</code> when your ids are
+          numbers, and it fails silently — no error, just an empty result and a confused student.
+        </p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">The fix</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-yaml-key">const</span> id = <span class="token-command">Number</span>(req.params.id);
+<span class="token-yaml-key">const</span> note = notes.find(n =&gt; n.id === id);
+
+<span class="token-yaml-key">if</span> (!note) {
+  <span class="token-yaml-key">return</span> res.status(<span class="token-val">404</span>).json({ error: <span class="token-string">"Note not found"</span> });
+}</pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          Note the <code>return</code>. Without it, execution continues and you try to send a second response,
+          which produces <strong>Cannot set headers after they are sent to the client</strong> — another
+          error you will meet today.
+        </p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 08 ══════════════ -->
+    <section class="section-block animate-fade-up" id="query">
+      <div class="section-header">
+        <div class="section-num-big">08</div>
+        <div class="section-header-text">
+          <div class="section-title">Query Strings</div>
+          <div class="section-subtitle">Optional instructions about how you want the data</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">GET /notes?search=react&amp;limit=10&amp;sort=desc</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.get(<span class="token-string">"/notes"</span>, (req, res) =&gt; {
+  <span class="token-command">console</span>.log(req.query);
+  <span class="token-comment">// { search: 'react', limit: '10', sort: 'desc' }</span>
+
+  <span class="token-yaml-key">const</span> limit = <span class="token-command">Number</span>(req.query.limit) <span class="token-operator">||</span> <span class="token-val">20</span>;
+  res.json(notes.slice(<span class="token-val">0</span>, limit));
+});</pre>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Design Rule</div>
+        <p class="concept-box-text">
+          <strong>Params identify. Query modifies.</strong> <code>/notes/5</code> says which note.
+          <code>?sort=desc&amp;page=2</code> says how you want the list presented. If you find yourself
+          writing <code>/notes?id=5</code>, that id belongs in the path instead.
+        </p>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text">
+          Query values are strings too. <code>?limit=10</code> gives <code>"10"</code>, so
+          <code>req.query.limit + 1</code> is <code>"101"</code>. And <code>?active=false</code> gives the
+          string <code>"false"</code>, which is <strong>truthy</strong>. Both bugs are extremely common.
+        </p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          A client sends <code>GET /notes?active=false</code> and your code does
+          <code>if (req.query.active) { ... }</code>. Does the block run?
+        </p>
+        <div class="quiz-options" id="quiz-query-1">
+          <button onclick="answerQuiz('quiz-query-1', this, true)" class="quiz-option">
+            A &nbsp;—&nbsp; Yes — it is the non-empty string "false", which is truthy
+          </button>
+          <button onclick="answerQuiz('quiz-query-1', this, false)" class="quiz-option">
+            B &nbsp;—&nbsp; No — Express converts "false" to the boolean false
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-query-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 09 ══════════════ -->
+    <section class="section-block animate-fade-up" id="body">
+      <div class="section-header">
+        <div class="section-num-big">09</div>
+        <div class="section-header-text">
+          <div class="section-title">The Request Body</div>
+          <div class="section-subtitle">And the one line of setup everybody forgets</div>
+        </div>
+      </div>
+
+      <div class="badge badge-gold">Caution — try this the broken way first</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Broken</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre">app.post(<span class="token-string">"/notes"</span>, (req, res) =&gt; {
+  <span class="token-command">console</span>.log(req.body);   <span class="token-comment">// undefined 😱</span>
+  res.json(req.body);
+});</pre>
+      </div>
+
+      <p>
+        Send a POST with a JSON body and <code>req.body</code> is <code>undefined</code>. The data definitely
+        arrived — so where did it go?
+      </p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">
+          The body does not arrive as an object. It arrives as a <strong>stream of raw bytes</strong>, in
+          chunks, after the blank line. Something has to collect those chunks, look at the
+          <code>Content-Type</code> header to learn the format, and parse them. Express does not do that by
+          default — parsing every body on every request would be wasteful. You have to opt in.
+        </p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Fixed</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-yaml-key">const</span> app = express();
+
+app.use(express.json());                     <span class="token-comment">// parses JSON bodies</span>
+app.use(express.urlencoded({ extended: <span class="token-yaml-key">true</span> })); <span class="token-comment">// parses HTML form bodies</span>
+
+app.post(<span class="token-string">"/notes"</span>, (req, res) =&gt; {
+  <span class="token-command">console</span>.log(req.body);   <span class="token-comment">// { title: 'Backend Day 1' } ✅</span>
+  res.status(<span class="token-val">201</span>).json(req.body);
+});</pre>
+      </div>
+
+      <p>
+        That <code>app.use(...)</code> line is your first piece of <strong>middleware</strong> — a function
+        that runs on every request before your route handlers. We will pull middleware apart properly in its
+        own session, including writing our own version of Express's chain.
+      </p>
+
+      <div class="badge badge-green">Verify</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+        </div>
+        <pre class="code-pre"><span class="token-command">curl</span> <span class="token-flag">-X</span> <span class="token-val">POST</span> <span class="token-string">http://localhost:3000/notes</span> \
+  <span class="token-flag">-H</span> <span class="token-string">"Content-Type: application/json"</span> \
+  <span class="token-flag">-d</span> <span class="token-string">'{"title":"Backend Day 1"}'</span></pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">
+          Drop the <code>-H "Content-Type: application/json"</code> and watch <code>req.body</code> become
+          empty again. The header is how the parser knows the bytes are JSON. Sending data is not enough —
+          you must say what kind of data it is.
+        </p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">
+          <code>req.body</code> is undefined on your POST route. What is the most likely cause?
+        </p>
+        <div class="quiz-options" id="quiz-body-1">
+          <button onclick="answerQuiz('quiz-body-1', this, false)" class="quiz-option">
+            A &nbsp;—&nbsp; GET is the only method that can carry data, so POST bodies are dropped
+          </button>
+          <button onclick="answerQuiz('quiz-body-1', this, true)" class="quiz-option">
+            B &nbsp;—&nbsp; No body parser is registered, so the raw stream was never parsed
+          </button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-body-1-feedback"></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ══════════════ 10 ══════════════ -->
+    <section class="section-block animate-fade-up" id="homework">
+      <div class="section-header">
+        <div class="section-num-big">10</div>
+        <div class="section-header-text">
+          <div class="section-title">Try It Yourself</div>
+          <div class="section-subtitle">Build it before the next note — the Notes app depends on all of this</div>
+        </div>
+      </div>
+
+      <div class="badge badge-blue">Base</div>
+      <ul>
+        <li>Start a server on port 3000 that responds to <code>GET /</code>.</li>
+        <li>Add <code>GET /profile/:username</code> and return the username as JSON.</li>
+        <li>Add <code>GET /search</code> and echo back <code>req.query</code>.</li>
+      </ul>
+
+      <div class="badge badge-accent">Push</div>
+      <ul>
+        <li>Add <code>POST /echo</code> that returns whatever body it receives. Make it work with curl.</li>
+        <li>Deliberately break the ordering: put <code>/profile/:username</code> above <code>/profile/me</code> and observe what happens. Then fix it.</li>
+        <li>Return a proper <code>404</code> with a JSON error when a resource does not exist.</li>
+      </ul>
+
+      <div class="badge badge-gold">Break</div>
+      <ul>
+        <li>Read the port from <code>process.env.PORT</code> with a fallback to 3000, and start it on 4000 without editing the file.</li>
+        <li>Log every incoming request's method, path and timestamp — using <code>app.use()</code>, before your routes.</li>
+        <li>Run <code>curl -v</code> against your own server and map every part of the output back to the table in section 3.</li>
+      </ul>
+
+      <div class="concept-box">
+        <div class="concept-box-label">One-Line Summary</div>
+        <p class="concept-box-text">
+          A server is a program that claims a port and waits. A route is method + path + handler. And every
+          byte a client sends reaches you through <strong>params, query, body or headers</strong> — four
+          slices of one plain-text request.
+        </p>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Sheryians Coding School · Kodr · Backend Note 02</span>
+      <span>Servers, Express &amp; Request Data</span>
+    </footer>
+
+  </main>
+
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('.code-pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const original = btn.textContent;
+    btn.textContent = 'copied';
+    setTimeout(() => { btn.textContent = original; }, 1400);
+  });
+}
+
+function answerQuiz(quizId, btn, isCorrect) {
+  const container = document.getElementById(quizId);
+  const feedback  = document.getElementById(quizId + '-feedback');
+
+  container.querySelectorAll('.quiz-option').forEach(b => {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '\u2713 Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '\u2717 Not quite \u2014 try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+// Sidebar scroll-spy
+(function () {
+  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const sections = links
+    .map(l => document.querySelector(l.getAttribute('href')))
+    .filter(Boolean);
+
+  if (!sections.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = links.find(l => l.getAttribute('href') === '#' + entry.target.id);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+})();
+
+</script>
+</body>
+</html>
