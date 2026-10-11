@@ -4,6 +4,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+for (const name of ["MONGO_URI", "JWT_SECRET"]) {
+  if (!process.env[name]) {
+    console.error(`Missing ${name}. Copy .env.example to .env and fill it in.`);
+    process.exit(1);
+  }
+}
+
 import app from './src/app.js';
 import connectDB from './src/config/database.js';
 

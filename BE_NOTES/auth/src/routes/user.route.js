@@ -3,10 +3,17 @@ import userModel from "../model/user.model.js";
 import jwt from "jsonwebtoken";
 
 const appRouter = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
+
+// Read at call time: with ES modules this file runs before server.js loads .env.
+// No fallback value: a missing secret must stop the request, not sign with a known key.
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not set (see .env.example)");
+  return secret;
+};
 
 const signToken = (userId) =>
-  jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "1h" });
+  jwt.sign({ id: userId }, getJwtSecret(), { expiresIn: "1h" });
 
 appRouter.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
@@ -60,7 +67,7 @@ appRouter.post("/register", async (req, res) => {
 appRouter.get("/getme", async (req, res) => {
   const token = req.headers.authorization;
 //   const token = authHeader && authHeader.split(" ")[1];
-     const decoded = jwt.verify(token, JWT_SECRET);
+     const decoded = jwt.verify(token, getJwtSecret());
      
 
 
